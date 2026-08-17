@@ -1,0 +1,46 @@
+{
+  "name": "@cinehost/player",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Dependency-free HTML5 video player and per-second engagement tracker for CineHost, the open-source Wistia alternative.",
+  "keywords": [
+    "video-player",
+    "wistia-alternative",
+    "video-analytics",
+    "engagement-tracking",
+    "html5-video",
+    "self-hosted"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/cinehost/cinehost#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cinehost/cinehost.git",
+    "directory": "packages/player"
+  },
+  "main": "src/player.js",
+  "exports": {
+    ".": "./src/player.js",
+    "./react": "./src/react.jsx",
+    "./player.css": "./src/player.css"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --mode embed",
+    "dev": "vite build --watch"
+  },
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "vite": "^6.0.7"
+  }
+}

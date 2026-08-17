@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Catches syntax errors in files the unit tests never import - the routes,
+      # the jobs, the dashboard entry.
+      - name: Check every module parses
+        run: |
+          for f in $(git ls-files 'packages/**/*.js' 'bin/*.js'); do
+            node --check "$f"
+          done
+
+      - run: npm run build
+
+      - run: npm test

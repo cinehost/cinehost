@@ -1,0 +1,469 @@
+/* One DOM, four skins. Everything skin-specific lives under [data-skin=…];
+   the shared block below is layout and behaviour only. */
+
+.cine {
+  --cine-accent: #2563eb;
+  --cine-ratio: 16 / 9;
+  --cine-ink: rgba(255, 255, 255, 0.94);
+  --cine-ink-dim: rgba(255, 255, 255, 0.62);
+  --cine-track: rgba(255, 255, 255, 0.26);
+  --cine-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--cine-ratio);
+  background: #000;
+  overflow: hidden;
+  border-radius: inherit;
+  font: 500 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--cine-ink);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cine--fill { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
+.cine:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cine-accent) 70%, transparent); }
+
+.cine-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: #000;
+}
+
+/* ---- big play ----------------------------------------------------------- */
+.cine-bigplay {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 76px;
+  height: 76px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--cine-accent);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  transition: transform 0.22s var(--cine-ease), opacity 0.18s var(--cine-ease);
+}
+.cine-bigplay svg { width: 34px; height: 34px; fill: currentColor; margin-left: 3px; }
+.cine-bigplay:hover { transform: scale(1.07); }
+.cine-bigplay:active { transform: scale(0.97); }
+.cine.is-playing .cine-bigplay { opacity: 0; pointer-events: none; transform: scale(0.7); }
+
+/* ---- controls shell ----------------------------------------------------- */
+.cine-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s var(--cine-ease), transform 0.2s var(--cine-ease);
+}
+.cine:hover .cine-controls,
+.cine:focus-within .cine-controls,
+.cine.is-menu-open .cine-controls,
+.cine:not(.is-playing) .cine-controls { opacity: 1; transform: none; }
+
+.cine-bar { display: flex; align-items: center; gap: 6px; }
+.cine-flex { flex: 1 1 auto; }
+
+.cine-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  transition: background-color 0.15s var(--cine-ease), color 0.15s var(--cine-ease);
+}
+.cine-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.cine-btn:active { transform: scale(0.94); }
+.cine-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.cine-btn svg [stroke] { stroke: currentColor; }
+.cine-btn.is-active { color: var(--cine-accent); }
+
+.cine-time { flex: none; font-variant-numeric: tabular-nums; color: var(--cine-ink-dim); white-space: nowrap; }
+
+/* ---- volume: slider expands on hover ------------------------------------ */
+.cine-volume-wrap { display: flex; align-items: center; }
+.cine-volume {
+  width: 0;
+  opacity: 0;
+  margin: 0;
+  accent-color: var(--cine-accent);
+  background: transparent;
+  transition: width 0.2s var(--cine-ease), opacity 0.2s var(--cine-ease), margin 0.2s var(--cine-ease);
+}
+.cine-volume-wrap:hover .cine-volume,
+.cine-volume:focus-visible { width: 66px; opacity: 1; margin: 0 6px 0 2px; }
+
+/* ---- scrub bar ---------------------------------------------------------- */
+.cine-scrub-row { position: relative; display: flex; align-items: center; }
+.cine-scrub {
+  position: relative;
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cine-track);
+  cursor: pointer;
+  touch-action: none;
+  transition: height 0.14s var(--cine-ease);
+}
+/* 18px hit target behind a 4px bar */
+.cine-scrub::before { content: ""; position: absolute; inset: -9px 0; }
+.cine-scrub:hover, .cine-scrub:focus-visible { height: 6px; }
+.cine-buffered,
+.cine-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.cine-buffered { background: rgba(255, 255, 255, 0.32); width: 0; }
+.cine-progress { background: var(--cine-accent); width: 0; }
+.cine-handle {
+  position: absolute;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.14s var(--cine-ease), transform 0.14s var(--cine-ease);
+}
+.cine:hover .cine-handle,
+.cine-scrub:focus-visible .cine-handle { opacity: 1; transform: scale(1); }
+
+/* ---- scrub thumbnail preview -------------------------------------------- */
+.cine-preview {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(12, 12, 14, 0.86);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.14s var(--cine-ease), transform 0.14s var(--cine-ease);
+}
+.cine.is-previewing .cine-preview { opacity: 1; transform: none; }
+.cine-preview-img {
+  border-radius: 6px;
+  background-repeat: no-repeat;
+  background-color: #000;
+}
+.cine-preview--time-only { padding: 4px 8px; }
+.cine-preview--time-only .cine-preview-img { display: none; }
+.cine-preview-time { font-size: 11px; font-variant-numeric: tabular-nums; color: #fff; }
+
+/* ---- settings menu ------------------------------------------------------ */
+.cine-menu-wrap { position: relative; flex: none; }
+.cine-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 148px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(16, 16, 18, 0.94);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom right;
+  pointer-events: none;
+  transition: opacity 0.15s var(--cine-ease), transform 0.15s var(--cine-ease);
+  z-index: 3;
+}
+.cine.is-menu-open .cine-menu { opacity: 1; transform: none; pointer-events: auto; }
+.cine-menu-label {
+  padding: 6px 8px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cine-ink-dim);
+}
+.cine-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cine-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cine-menu-item:hover { background: rgba(255, 255, 255, 0.12); }
+.cine-menu-check { width: 14px; height: 14px; display: grid; place-items: center; opacity: 0; }
+.cine-menu-check svg { width: 14px; height: 14px; }
+.cine-menu-check svg [stroke] { stroke: var(--cine-accent); }
+.cine-menu-item.is-active .cine-menu-check { opacity: 1; }
+.cine-menu-item.is-active { color: #fff; }
+
+/* ---- teaser (hover preview) --------------------------------------------- */
+.cine-teaser {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--cine-ease);
+}
+.cine.is-teasing .cine-teaser { opacity: 1; }
+.cine.is-playing .cine-teaser { opacity: 0; }
+
+/* ---- "tap for sound" ---------------------------------------------------- */
+.cine-unmute {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(18, 18, 20, 0.66);
+  backdrop-filter: blur(12px);
+  color: var(--cine-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 4;
+  animation: cine-rise 0.3s var(--cine-ease);
+}
+.cine.is-autoplay-muted .cine-unmute { display: inline-flex; }
+.cine-unmute:hover { background: rgba(30, 30, 34, 0.82); }
+.cine-unmute svg { width: 15px; height: 15px; fill: currentColor; }
+.cine-unmute svg [stroke] { stroke: currentColor; }
+
+@keyframes cine-rise {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- loading ------------------------------------------------------------ */
+.cine-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.cine.is-loading .cine-spinner { opacity: 1; animation: cine-spin 0.8s linear infinite; }
+.cine.is-loading .cine-bigplay { opacity: 0; }
+@keyframes cine-spin { to { transform: rotate(360deg); } }
+
+/* =========================================================================
+   SKIN: glass - controls float in a blurred, inset container
+   ========================================================================= */
+.cine[data-skin="glass"] .cine-controls {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-radius: 16px;
+  background: rgba(18, 18, 20, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+.cine[data-skin="glass"] .cine-bar { gap: 4px; }
+.cine[data-skin="glass"] .cine-preview { bottom: calc(100% + 14px); }
+
+@media (max-width: 480px) {
+  .cine[data-skin="glass"] .cine-controls { left: 8px; right: 8px; bottom: 8px; padding: 8px 8px 6px; }
+}
+
+/* =========================================================================
+   SKIN: edge - flush to the bottom edge over a gradient scrim
+   ========================================================================= */
+.cine[data-skin="edge"] .cine-controls {
+  gap: 2px;
+  padding: 34px 14px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 100%);
+}
+.cine[data-skin="edge"] .cine-scrub { height: 4px; }
+.cine[data-skin="edge"] .cine-scrub:hover { height: 7px; }
+.cine[data-skin="edge"] .cine-bar { gap: 4px; margin-top: 4px; }
+
+/* =========================================================================
+   SKIN: minimal - a hairline until you interact
+   ========================================================================= */
+.cine[data-skin="minimal"] .cine-controls {
+  gap: 0;
+  padding: 30px 14px 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+  opacity: 1;                 /* the shell stays; the BAR is what hides */
+  transform: none;
+}
+.cine[data-skin="minimal"] .cine-bar {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.24s var(--cine-ease), opacity 0.18s var(--cine-ease), margin-top 0.24s var(--cine-ease);
+}
+.cine[data-skin="minimal"]:hover .cine-bar,
+.cine[data-skin="minimal"]:focus-within .cine-bar,
+.cine[data-skin="minimal"].is-menu-open .cine-bar,
+.cine[data-skin="minimal"]:not(.is-playing) .cine-bar {
+  max-height: 40px;
+  margin-top: 8px;
+  opacity: 1;
+}
+/* Idle: hairline progress, no scrim, no track. */
+.cine[data-skin="minimal"] .cine-scrub { height: 2px; background: rgba(255, 255, 255, 0.2); }
+.cine[data-skin="minimal"]:hover .cine-scrub { height: 6px; background: var(--cine-track); }
+.cine[data-skin="minimal"].is-playing:not(:hover):not(:focus-within) .cine-controls {
+  padding: 0;
+  background: none;
+}
+.cine[data-skin="minimal"].is-playing:not(:hover):not(:focus-within) .cine-scrub {
+  border-radius: 0;
+}
+
+/* =========================================================================
+   SKIN: bar - a solid accent strip along the bottom, always visible.
+   Time on the left, scrub inline, actions on the right.
+   ========================================================================= */
+.cine[data-skin="bar"] {
+  /* Both tunable from the outside. Alpha: lower shows more video through,
+     toward 100% is a solid strip. Height drives the bar AND the offsets of the
+     centred overlays, so they can never drift apart. */
+  --cine-bar-alpha: 82%;
+  --cine-bar-h: 34px;
+  --cine-ink: var(--cine-bar-ink, #fff);
+  --cine-ink-dim: color-mix(in srgb, var(--cine-bar-ink, #fff) 78%, transparent);
+  --cine-track: color-mix(in srgb, var(--cine-bar-ink, #fff) 32%, transparent);
+}
+.cine[data-skin="bar"] .cine-controls {
+  /* `display: contents` on .cine-bar lifts its children into this flex row, so
+     the time can sit left of the scrub even though the markup nests it. One
+     DOM, four skins - the alternative was a skin-specific DOM branch. */
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: var(--cine-bar-h);
+  padding: 0 10px;
+  /* Translucent, and it overlays the video rather than reserving space below
+     it - reserving space would put black letterbox behind the transparency
+     instead of the picture, which defeats the point. */
+  background: color-mix(in srgb, var(--cine-accent) var(--cine-bar-alpha), transparent);
+  backdrop-filter: blur(10px) saturate(1.25);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+  opacity: 1;
+  transform: none;
+}
+.cine[data-skin="bar"] .cine-bar { display: contents; }
+
+.cine[data-skin="bar"] .cine-bar > * { order: 4; }
+.cine[data-skin="bar"] .cine-play { order: 1; margin-left: -4px; }
+.cine[data-skin="bar"] .cine-time {
+  order: 2;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cine-ink);
+}
+.cine[data-skin="bar"] .cine-scrub-row { order: 3; flex: 1 1 auto; }
+.cine[data-skin="bar"] .cine-flex { display: none; }
+
+.cine[data-skin="bar"] .cine-scrub { height: 3px; background: var(--cine-track); }
+.cine[data-skin="bar"] .cine-scrub:hover { height: 4px; }
+/* The bar is short, so the invisible hit target has to stay tall enough to
+   grab comfortably - it must not shrink with the visible track. */
+.cine[data-skin="bar"] .cine-scrub::before { inset: -12px 0; }
+.cine[data-skin="bar"] .cine-progress { background: var(--cine-ink); }
+.cine[data-skin="bar"] .cine-buffered { background: color-mix(in srgb, var(--cine-bar-ink, #fff) 22%, transparent); }
+.cine[data-skin="bar"] .cine-handle {
+  background: var(--cine-ink);
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cine[data-skin="bar"] .cine-btn { color: var(--cine-ink); width: 26px; height: 26px; border-radius: 6px; }
+.cine[data-skin="bar"] .cine-btn svg { width: 17px; height: 17px; }
+.cine[data-skin="bar"] .cine-btn:hover { background: color-mix(in srgb, var(--cine-bar-ink, #fff) 16%, transparent); }
+/* Minimal means minimal: the volume slider and PiP go, and the settings menu
+   keeps everything they contained. */
+.cine[data-skin="bar"] .cine-volume { display: none; }
+.cine[data-skin="bar"] .cine-preview { bottom: calc(100% + 16px); }
+.cine[data-skin="bar"] .cine-menu { bottom: calc(100% + 14px); }
+
+/* Nudge the centred overlays up by half the bar so they read as centred in the
+   picture the viewer actually sees. Insets, not margins: margin-bottom would
+   fight the `margin: auto` that does the centring. */
+.cine[data-skin="bar"] .cine-bigplay,
+.cine[data-skin="bar"] .cine-spinner { inset: 0 0 var(--cine-bar-h); }
+
+@media (max-width: 480px) {
+  .cine[data-skin="bar"] { --cine-bar-h: 32px; }
+  .cine[data-skin="bar"] .cine-controls { padding: 0 8px; gap: 6px; }
+}
+
+/* ---- shared responsive + motion ----------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .cine-controls, .cine-bigplay, .cine-handle, .cine-preview, .cine-menu, .cine-bar, .cine-volume {
+    transition: none;
+  }
+  .cine.is-loading .cine-spinner { animation-duration: 2s; }
+}
+
+@media (max-width: 480px) {
+  .cine-volume-wrap:hover .cine-volume { width: 0; opacity: 0; margin: 0; }
+  .cine-time { font-size: 11px; }
+  .cine-bigplay { width: 62px; height: 62px; }
+  .cine-bigplay svg { width: 28px; height: 28px; }
+}
+
+/* Coarse pointers never hover, so the chrome must not depend on it. */
+@media (hover: none) {
+  .cine .cine-controls { opacity: 1; transform: none; }
+  .cine[data-skin="minimal"] .cine-bar { max-height: 40px; margin-top: 8px; opacity: 1; }
+  .cine-handle { opacity: 1; transform: scale(1); }
+}

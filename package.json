@@ -1,0 +1,42 @@
+{
+  "name": "cinehost",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Open-source Wistia alternative. Self-hosted video hosting with per-second engagement analytics, a custom player, and webhooks. Stores and streams from Cloudflare R2.",
+  "keywords": [
+    "wistia-alternative",
+    "vidyard-alternative",
+    "video-hosting",
+    "video-analytics",
+    "self-hosted",
+    "video-player",
+    "cloudflare-r2",
+    "engagement-analytics",
+    "video-marketing",
+    "open-source"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/cinehost/cinehost#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cinehost/cinehost.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cinehost/cinehost/issues"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @cinehost/collector",
+    "start": "npm run start -w @cinehost/collector",
+    "build": "npm run build -w @cinehost/player && npm run build:css -w @cinehost/collector",
+    "migrate": "node bin/migrate.js",
+    "video:publish": "node bin/publish-video.js",
+    "test": "node --test packages/collector/test/"
+  }
+}

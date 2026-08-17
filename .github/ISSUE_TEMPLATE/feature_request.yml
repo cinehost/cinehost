@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something CineHost should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: The situation you're in, not the solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like it to do
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you're doing instead today

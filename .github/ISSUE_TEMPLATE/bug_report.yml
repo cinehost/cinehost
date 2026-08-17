@@ -1,0 +1,66 @@
+name: Bug report
+description: Something doesn't work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problem? Don't file it here — see
+        [SECURITY.md](https://github.com/cinehost/cinehost/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part
+      options:
+        - Player / embed
+        - Analytics or stats
+        - Upload / transcode
+        - Dashboard
+        - Webhooks
+        - Deployment
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Node, Postgres, ffmpeg versions. For player bugs, the browser — and whether it also reproduces in the iframe embed (`/embed/:slug`).
+      placeholder: |
+        Node: 20.11.0
+        Postgres: 18
+        ffmpeg: 6.1
+        Browser: Safari 18 (iframe embed: also broken)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Collector output or browser console. Redact keys.
+      render: shell

@@ -1,0 +1,26 @@
+{$COLLECTOR_DOMAIN:video-api.example.com} {
+	encode zstd gzip
+
+	# The embed page requests these with a ?v=<build mtime> stamp, so they can
+	# be cached hard - a deploy changes the URL.
+	handle /player.js {
+		header Cache-Control "public, max-age=86400"
+		reverse_proxy collector:8080
+	}
+	handle /player.css {
+		header Cache-Control "public, max-age=86400"
+		reverse_proxy collector:8080
+	}
+	# e.js is embedded by URL on other people's pages, unversioned, so its cache
+	# window is the worst case for shipping a tracker fix. Keep it short.
+	handle /e.js {
+		header Cache-Control "public, max-age=300"
+		reverse_proxy collector:8080
+	}
+
+	handle {
+		reverse_proxy collector:8080 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+}

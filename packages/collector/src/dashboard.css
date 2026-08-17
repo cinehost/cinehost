@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* Radix Colors: 12-step scales, light under :root and dark under .dark. The
+   dark files are class-scoped only, so an inline script in the document head
+   stamps .dark from localStorage or prefers-color-scheme. */
+@import "@radix-ui/colors/gray.css";
+@import "@radix-ui/colors/gray-dark.css";
+@import "@radix-ui/colors/blue.css";
+@import "@radix-ui/colors/blue-dark.css";
+@import "@radix-ui/colors/orange.css";
+@import "@radix-ui/colors/orange-dark.css";
+@import "@radix-ui/colors/green.css";
+@import "@radix-ui/colors/green-dark.css";
+@import "@radix-ui/colors/gray-alpha.css";
+@import "@radix-ui/colors/gray-dark-alpha.css";
+
+@source "../public/app";
+
+/* The theme toggle wins over the OS setting in both directions, so the dark
+   variant keys off the stamped class, not the media query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Chart series. Steps differ per mode because the validated lightness band
+   differs per surface: on light, step 9 is too pale to clear 3:1; on dark,
+   step 10/11 sit above the band. Both pairs pass the full six checks
+   (validate_palette.js) against the surfaces they actually render on:
+   light #fcfcfc, dark #191919. Do not "simplify" these to one shared step. */
+:root {
+  --series-1: var(--blue-11);   /* #0d74ce - retention */
+  --series-2: var(--orange-11); /* #cc4e00 - engagement */
+}
+.dark {
+  --series-1: var(--blue-9);    /* #0090ff */
+  --series-2: var(--orange-10); /* #ef5f00 */
+}
+
+@theme inline {
+  --color-gray-1: var(--gray-1);
+  --color-gray-2: var(--gray-2);
+  --color-gray-3: var(--gray-3);
+  --color-gray-4: var(--gray-4);
+  --color-gray-5: var(--gray-5);
+  --color-gray-6: var(--gray-6);
+  --color-gray-7: var(--gray-7);
+  --color-gray-8: var(--gray-8);
+  --color-gray-9: var(--gray-9);
+  --color-gray-10: var(--gray-10);
+  --color-gray-11: var(--gray-11);
+  --color-gray-12: var(--gray-12);
+
+  --color-accent-3: var(--blue-3);
+  --color-accent-6: var(--blue-6);
+  --color-accent-9: var(--blue-9);
+  --color-accent-10: var(--blue-10);
+  --color-accent-11: var(--blue-11);
+
+  --color-success-11: var(--green-11);
+
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+
+  --color-panel: var(--panel);
+  --color-page: var(--page-bg);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --page-bg: var(--gray-2);
+  --panel: #ffffff;
+}
+.dark {
+  --page-bg: var(--gray-1);
+  --panel: var(--gray-2);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--page-bg);
+    color: var(--gray-12);
+  }
+}
+
+@layer components {
+  /* Radix Select trigger, as a plain <select>. */
+  .rx-select {
+    @apply h-8 rounded-md border border-gray-7 bg-panel px-2.5 pr-7 text-sm text-gray-12
+           shadow-xs outline-none appearance-none cursor-pointer
+           hover:border-gray-8 focus-visible:ring-2 focus-visible:ring-accent-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 14px;
+  }
+
+  .rx-button {
+    @apply inline-flex h-8 items-center gap-1.5 rounded-md border border-gray-7 bg-panel px-2.5
+           text-sm font-medium text-gray-12 shadow-xs cursor-pointer
+           hover:bg-gray-3 active:bg-gray-4 focus-visible:ring-2 focus-visible:ring-accent-9 outline-none;
+  }
+
+  .rx-button--solid {
+    @apply border-transparent bg-accent-9 text-white hover:bg-accent-10 active:bg-accent-10;
+  }
+  .rx-button:disabled {
+    @apply cursor-not-allowed opacity-50 hover:bg-panel;
+  }
+  .rx-button--solid:disabled {
+    @apply hover:bg-accent-9;
+  }
+
+  .rx-input {
+    @apply h-9 w-full rounded-md border border-gray-7 bg-panel px-2.5 text-sm text-gray-12
+           shadow-xs outline-none placeholder:text-gray-9
+           hover:border-gray-8 focus-visible:border-accent-9 focus-visible:ring-2 focus-visible:ring-accent-6;
+  }
+
+  .rx-card {
+    @apply rounded-xl border border-gray-6 bg-panel shadow-xs;
+  }
+
+  .rx-dialog {
+    /* A native <dialog> centres itself with the UA stylesheet's `margin: auto`.
+       Tailwind's preflight resets every margin to 0, which pins the dialog to
+       the top-left instead - so it has to be restored explicitly. */
+    @apply m-auto max-h-[calc(100vh-4rem)] w-[min(560px,calc(100vw-2rem))] overflow-y-auto
+           rounded-xl border border-gray-6 bg-panel p-6 text-gray-12 shadow-2xl;
+  }
+  .rx-dialog::backdrop {
+    @apply bg-black/45;
+  }
+
+  .rx-badge {
+    @apply inline-flex items-center rounded-full bg-accent-3 px-2 py-0.5 text-xs font-medium text-accent-11;
+  }
+
+  .rx-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .rx-table th {
+    @apply border-b border-gray-6 px-2 py-1.5 text-left text-xs font-medium text-gray-11;
+  }
+  .rx-table td {
+    @apply border-b border-gray-4 px-2 py-1.5 text-gray-12;
+  }
+  .rx-table .num {
+    @apply text-right tabular-nums;
+  }
+}

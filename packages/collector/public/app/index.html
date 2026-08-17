@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video analytics</title>
+<link rel="stylesheet" href="/app/app.css">
+<link rel="stylesheet" href="/player.css">
+<script>
+  // Stamp the theme before first paint. Radix's dark scales are class-scoped,
+  // so without this the page flashes light on a dark-mode machine.
+  (() => {
+    const saved = localStorage.getItem('cine-theme');
+    const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', dark);
+  })();
+</script>
+</head>
+<body class="font-sans antialiased">
+
+<header class="sticky top-0 z-10 border-b border-gray-6 bg-panel/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-6 py-3">
+    <h1 class="text-[15px] font-semibold tracking-tight">Video analytics</h1>
+    <select id="video" class="rx-select max-w-[280px]"></select>
+    <select id="range" class="rx-select">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last 12 months</option>
+    </select>
+    <div class="flex-1"></div>
+    <button id="upload-open" type="button" class="rx-button rx-button--solid">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Upload video
+    </button>
+    <button id="theme" type="button" class="rx-button" aria-label="Toggle theme">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+      </svg>
+      Theme
+    </button>
+  </div>
+</header>
+
+<main class="mx-auto grid max-w-6xl gap-5 px-6 py-6">
+
+  <section class="rx-card p-5">
+    <div class="mb-3 flex items-baseline justify-between gap-3">
+      <h2 class="text-sm font-semibold">Library</h2>
+      <span class="text-xs text-gray-11" id="library-count"></span>
+    </div>
+    <div id="library"></div>
+  </section>
+
+  <section id="detail" class="rx-card hidden overflow-hidden">
+    <div class="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,1fr)]">
+
+      <div class="bg-gray-2 p-5">
+        <div id="preview-mount" class="overflow-hidden rounded-lg shadow-sm"></div>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span id="detail-time" class="text-xs tabular-nums text-gray-11">Scrub to a frame, then set it as the thumbnail</span>
+          <div class="flex-1"></div>
+          <a id="detail-open" class="rx-button" target="_blank" rel="noopener">Open embed</a>
+          <a id="detail-skins" class="rx-button" target="_blank" rel="noopener">Compare skins</a>
+        </div>
+      </div>
+
+      <div class="grid content-start gap-5 border-gray-6 p-5 lg:border-l">
+        <div>
+          <h2 id="detail-title" class="text-sm font-semibold">—</h2>
+          <p id="detail-meta" class="mt-0.5 text-xs text-gray-11"></p>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Thumbnail</span>
+          <div class="flex items-start gap-3">
+            <img id="detail-poster" alt="" class="h-[68px] w-[120px] shrink-0 rounded-md border border-gray-6 object-cover bg-gray-3">
+            <div class="grid flex-1 gap-1.5">
+              <button id="poster-frame" type="button" class="rx-button justify-center">Use current frame</button>
+              <button id="poster-upload" type="button" class="rx-button justify-center">Upload image…</button>
+              <input id="poster-file" type="file" accept="image/png,image/jpeg,image/webp,image/avif" class="hidden">
+            </div>
+          </div>
+          <p id="poster-note" class="text-xs text-gray-11"></p>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Player skin</span>
+          <div id="skin-picker" class="grid grid-cols-2 gap-1.5">
+            <button type="button" class="rx-button justify-center" data-skin="glass">Glass</button>
+            <button type="button" class="rx-button justify-center" data-skin="edge">Edge</button>
+            <button type="button" class="rx-button justify-center" data-skin="minimal">Minimal</button>
+            <button type="button" class="rx-button justify-center" data-skin="bar">Colour bar</button>
+          </div>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Accent colour</span>
+          <div class="flex items-center gap-2">
+            <input id="accent-color" type="color" value="#2563eb"
+                   class="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-gray-7 bg-panel p-1">
+            <input id="accent-hex" type="text" spellcheck="false" class="rx-input font-mono text-[13px]" placeholder="#2563eb">
+          </div>
+          <div id="accent-presets" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Playback</span>
+          <select id="autoplay-mode" class="rx-select h-9 w-full">
+            <option value="off">No autoplay — show the thumbnail</option>
+            <option value="muted">Autoplay muted</option>
+            <option value="sound">Autoplay with sound</option>
+          </select>
+          <label class="flex items-center gap-2 text-sm">
+            <input id="loop-toggle" type="checkbox" class="size-4 accent-accent-9">
+            Loop when it reaches the end
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input id="controls-toggle" type="checkbox" class="size-4 accent-accent-9" checked>
+            Show player controls
+          </label>
+          <p id="autoplay-note" class="text-xs text-gray-11"></p>
+          <p id="controls-warning" class="hidden rounded-md border border-gray-6 bg-gray-2 px-2.5 py-2 text-xs text-gray-12"></p>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Teaser</span>
+          <div class="flex items-start gap-3">
+            <video id="teaser-preview" muted loop playsinline preload="none"
+                   class="h-[68px] w-[120px] shrink-0 rounded-md border border-gray-6 bg-gray-3 object-cover"></video>
+            <div class="grid flex-1 gap-1.5">
+              <button id="teaser-regen" type="button" class="rx-button justify-center">Use current moment</button>
+              <button id="teaser-gif" type="button" class="rx-button justify-center">Copy GIF URL</button>
+            </div>
+          </div>
+          <p id="teaser-note" class="text-xs text-gray-11"></p>
+        </div>
+
+        <div class="grid gap-2">
+          <span class="text-xs font-medium text-gray-11">Embed code</span>
+          <pre id="detail-embed" class="overflow-x-auto rounded-lg border border-gray-6 bg-gray-2 p-2.5 text-[11.5px] leading-relaxed"></pre>
+          <button id="detail-copy" type="button" class="rx-button justify-center">Copy embed code</button>
+        </div>
+
+        <p id="detail-saved" class="text-xs text-success-11 opacity-0 transition-opacity">Saved</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="tiles" class="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]"></div>
+
+  <section class="rx-card p-5">
+    <div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">
+      <h2 class="text-sm font-semibold">Engagement</h2>
+      <div class="flex gap-4 text-xs text-gray-11">
+        <span class="inline-flex items-center gap-1.5">
+          <i class="inline-block size-2.5 rounded-[3px] bg-series-1"></i> Retention
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <i class="inline-block size-2.5 rounded-[3px] bg-series-2"></i> Engagement
+        </span>
+      </div>
+    </div>
+    <p class="mb-4 max-w-2xl text-xs text-gray-11">
+      Share of plays still watching at each second, and how many times each second was played.
+      Engagement above 100% means viewers rewatched that moment.
+    </p>
+    <div class="relative overflow-x-auto overflow-y-hidden" id="engagement-wrap">
+      <svg id="engagement" viewBox="0 0 900 300" preserveAspectRatio="none" class="block h-auto w-full min-w-[520px]" role="img" aria-label="Engagement and retention over the video timeline"></svg>
+      <div id="engagement-tip" class="pointer-events-none absolute z-20 rounded-lg border border-gray-6 bg-panel px-2.5 py-2 text-xs shadow-lg opacity-0 transition-opacity whitespace-nowrap"></div>
+    </div>
+    <details class="mt-3">
+      <summary class="cursor-pointer text-xs text-gray-11 hover:text-gray-12">Show data table</summary>
+      <div class="mt-2 max-h-72 overflow-auto" id="engagement-table"></div>
+    </details>
+  </section>
+
+  <section class="rx-card p-5">
+    <h2 class="mb-1 text-sm font-semibold">Plays per day</h2>
+    <p class="mb-4 text-xs text-gray-11">Solid is plays; the pale bar behind it is impressions.</p>
+    <div class="relative overflow-x-auto overflow-y-hidden" id="daily-wrap">
+      <svg id="daily" viewBox="0 0 900 190" preserveAspectRatio="none" class="block h-auto w-full min-w-[520px]" role="img" aria-label="Plays per day"></svg>
+      <div id="daily-tip" class="pointer-events-none absolute z-20 rounded-lg border border-gray-6 bg-panel px-2.5 py-2 text-xs shadow-lg opacity-0 transition-opacity whitespace-nowrap"></div>
+    </div>
+  </section>
+
+  <div class="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+    <section class="rx-card p-5"><h2 class="mb-3 text-sm font-semibold">Referrers</h2><div id="referrers"></div></section>
+    <section class="rx-card p-5"><h2 class="mb-3 text-sm font-semibold">Devices</h2><div id="devices"></div></section>
+    <section class="rx-card p-5"><h2 class="mb-3 text-sm font-semibold">Countries</h2><div id="countries"></div></section>
+  </div>
+
+  <section class="rx-card p-5">
+    <h2 class="mb-3 text-sm font-semibold">Recent views</h2>
+    <div class="max-h-[420px] overflow-auto" id="views"></div>
+  </section>
+
+</main>
+
+<dialog id="upload-dialog" class="rx-dialog">
+  <form method="dialog" class="contents"><button value="cancel" class="hidden"></button></form>
+
+  <div class="mb-4 flex items-start justify-between gap-4">
+    <div>
+      <h2 class="text-base font-semibold">Upload a video</h2>
+      <p class="mt-0.5 text-xs text-gray-11">
+        Encoded on the server, stored on Cloudflare R2. You can close this window &mdash; it keeps going.
+      </p>
+    </div>
+    <button id="upload-close" type="button" class="rx-button size-8 justify-center px-0" aria-label="Close">✕</button>
+  </div>
+
+  <!-- step 1: pick -->
+  <div id="upload-step-pick">
+    <label id="dropzone" for="file"
+           class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-7 bg-gray-2 px-6 py-10 text-center transition-colors hover:border-accent-9 hover:bg-accent-3/40">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-gray-11" aria-hidden="true">
+        <path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+      </svg>
+      <span class="text-sm font-medium">Drop a video here, or click to choose</span>
+      <span class="text-xs text-gray-11" id="upload-hint">MP4, MOV, WebM, MKV and friends</span>
+    </label>
+    <input id="file" type="file" accept="video/*" class="hidden">
+
+    <div class="mt-4 grid gap-3">
+      <label class="grid gap-1.5">
+        <span class="text-xs font-medium text-gray-11">Title</span>
+        <input id="upload-title" type="text" class="rx-input" placeholder="How it works">
+      </label>
+      <label class="grid gap-1.5">
+        <span class="text-xs font-medium text-gray-11">URL slug</span>
+        <input id="upload-slug" type="text" class="rx-input font-mono text-[13px]" placeholder="how-it-works">
+        <span class="text-xs text-gray-11">Public address: <span id="slug-preview" class="font-mono">…/embed/how-it-works</span></span>
+      </label>
+    </div>
+
+    <div class="mt-5 flex items-center justify-end gap-2">
+      <button id="upload-cancel" type="button" class="rx-button">Cancel</button>
+      <button id="upload-start" type="button" class="rx-button rx-button--solid" disabled>Upload</button>
+    </div>
+  </div>
+
+  <!-- step 2: working -->
+  <div id="upload-step-working" class="hidden">
+    <div class="mb-2 flex items-baseline justify-between">
+      <span id="progress-label" class="text-sm font-medium">Uploading…</span>
+      <span id="progress-pct" class="text-sm tabular-nums text-gray-11">0%</span>
+    </div>
+    <div class="h-2 overflow-hidden rounded-full bg-gray-4">
+      <div id="progress-bar" class="h-full w-0 rounded-full bg-accent-9 transition-[width] duration-300"></div>
+    </div>
+    <p id="progress-note" class="mt-3 text-xs text-gray-11">
+      Keep this tab open while the file uploads. Encoding continues on the server either way.
+    </p>
+    <div class="mt-5 flex justify-end">
+      <button id="upload-background" type="button" class="rx-button">Run in background</button>
+    </div>
+  </div>
+
+  <!-- step 3: done -->
+  <div id="upload-step-done" class="hidden">
+    <div class="mb-3 flex items-center gap-2 text-sm font-medium text-success-11">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      <span id="done-title">Ready</span>
+    </div>
+    <p class="mb-2 text-xs text-gray-11">Paste this anywhere a video should appear:</p>
+    <pre id="done-embed" class="overflow-x-auto rounded-lg border border-gray-6 bg-gray-2 p-3 text-[12px] leading-relaxed"></pre>
+    <div class="mt-4 flex flex-wrap justify-end gap-2">
+      <button id="done-copy" type="button" class="rx-button">Copy embed code</button>
+      <button id="done-preview" type="button" class="rx-button">Preview</button>
+      <button id="done-close" type="button" class="rx-button rx-button--solid">Done</button>
+    </div>
+  </div>
+
+  <p id="upload-error" class="mt-4 hidden rounded-lg border border-gray-6 bg-gray-2 px-3 py-2 text-xs text-gray-12"></p>
+</dialog>
+
+<!-- The real player, mounted with track:false so previewing a video never
+     records an impression against its own analytics. -->
+<script src="/player.js"></script>
+<!-- absolute: /app is served without a trailing slash, so a relative src
+     would resolve to /app.js -->
+<script type="module" src="/app/app.js"></script>
+</body>
+</html>
